@@ -1,9 +1,7 @@
-_______________________________________________________________________________________________________________________________________________________________________
-                                                                  
-                                                                la liste des etudiants
-_______________________________________________________________________________________________________________________________________________________________________
-     
-       NOM      |       PRENOM       |      CNI      |      CNE      |           EMAIL            |            ADRESSE           |             password         
-_______________________________________________________________________________________________________________________________________________________________________
- boukaidi       |tarik               |cd915075       |n1352          |tarikboka123@gmail.com      |narjiss a fes                 |tarik                  
- lamhandi       |taha                |d688           |n133270        |tahaamin627@gmail.com       |meknes                        |taha123                       
+tt bb cd n13 rrr rev ttt
+boukaidi tarik cd915075 n1352 tarikboka123@gmail.com fes tarik123                
+kk kk kk kk aminekhedidj@gmail.com tzaz aminekhe
+hicham hamid cd n13 hicham@gmail.com fes hicham
+ewg werwre wer wef wre wre wer
+ef we fese wrewre wfeg wfeg wfe
+dsg sdg sd sgd fsd sdg 11

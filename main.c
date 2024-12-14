@@ -6,11 +6,11 @@
 #include <ctype.h>
 #include "FUNCTION.H"
 int main() {
-homepage();
-
-
-    return 0;
+SetConsoleOutputCP(CP_UTF8);
+LOGIN1();
+return 0;
 }
+
 
 
 
