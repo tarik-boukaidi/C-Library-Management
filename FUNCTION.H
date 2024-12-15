@@ -911,7 +911,12 @@ void espace_etudiant(){
         case 2 :
             recherche_livre();
             if(pos == -2.0) puts("\nDesole!!! Actuellement, Il n'y a pas de livre !!!\n\tVoyez revenir ulterierement\n\tMERCI POUR VOTRE COMPREHENSION.");
-            else espace_recherche_livre();
+            else
+            {
+                espace_recherche_livre();
+                afficher_fpos();
+                getch();
+            }
             break;
         case 3 : affiche_livre("liste_livre.txt");
         break;
@@ -1305,7 +1310,7 @@ void info_livre_equ(info_livre *debut)
 
 
 void recherche_livre()
-{
+{    setcolor(9);
     tmp = (info_livre*)malloc(sizeof(info_livre));
     fp = fopen(nomFile , "r+t");
     if(fp == NULL) {
