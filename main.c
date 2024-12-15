@@ -7,7 +7,7 @@
 #include "FUNCTION.H"
 int main() {
 SetConsoleOutputCP(CP_UTF8);
-LOGIN1();
+homepage();
 return 0;
 }
 
