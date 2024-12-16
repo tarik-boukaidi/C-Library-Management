@@ -1013,6 +1013,7 @@ void espace_administration()
                 afficher_fpos();
                 getch();
             }
+            break;
         case 7 :affiche_livre_emprunter();
         break;
         case 8: erreur_page();
@@ -1236,7 +1237,7 @@ erreur_num6:
                     printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile);
                     exit(1);
                 }
-                fprintf(fp , " %-7d  %-21s  %-20s  %-20s  %-18d  %-9d  %-28.2f  %-28.2f\n" , (debut->ID) , (debut->titre) , (debut->auteur) , (debut->editeur) , (debut->ans_publication) , (debut->qte) , (debut->prix_jour) , (debut->prix_semaine));
+                fprintf(fp , "%d|%s|%s|%s|%d|%d|%f|%f\n", (debut->ID) , (debut->titre) , (debut->auteur) , (debut->editeur) , (debut->ans_publication) , (debut->qte) , (debut->prix_jour) , (debut->prix_semaine));
                 puts("\nL'enregesretement des informations s'effectue avec succee") ;
 
                 n = fclose(fp);
@@ -1292,7 +1293,7 @@ void info_livre_equ(info_livre *debut)
     while(!feof(fp))
     {
         n++;
-        m = fscanf(fp , " %d  %s  %s  %s  %d  %d  %f  %f\n" , &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
+        m = fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n" , &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
         if(!stricmp(debut->titre , tmp->titre) && !stricmp(debut->auteur , tmp->auteur) && !stricmp(debut->editeur , tmp->editeur) && (debut->ans_publication == tmp->ans_publication)) break;
     }
     if(!stricmp(debut->titre , tmp->titre) && !stricmp(debut->auteur , tmp->auteur) && !stricmp(debut->editeur , tmp->editeur) && (debut->ans_publication == tmp->ans_publication))
@@ -1439,8 +1440,7 @@ void retourner_livre() {
     // Lecture du titre du livre
     printf("Entrez le titre du livre : ");
     fflush(stdin);
-    fgets(nom, sizeof(nom), stdin);
-    nom[strcspn(nom, "\n")] = '\0';  // Supprimer le saut de ligne (\n)
+    scanf("%[^\n]",nom);
 
     Livre livre;
 
