@@ -3,66 +3,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include <string.h>
-#include <ctype.h>
-#include <conio.h>
+#include<string.h>
+#include<ctype.h>
+#include<conio.h>
 #include <time.h>
-#define N 30
+#define L 256
+#define N 40
 #define M 20
-#define nomFile "liste_livre.txt"
-#define nomFile_1 "liste_livre_1.txt"
-#define nomFile_2 "liste_inscription_eleve.txt"
-#define nomFile_3 "lliste d'administration"
-#define nomFile_4 "test.txt"
-#define MAX_PASSWORD_LENGTH 20
-#define CORRECT_PASSWORD "motdepasse" // Mot de passe correct (à remplacer par une vraie logique de vérification)
-void convertirEnMajuscules(char *chaine) {
-    for (int i = 0; chaine[i] != '\0'; i++) {
-        chaine[i] = toupper(chaine[i]);
-    }
-}
-void masquer_mot_de_passe(char *password) {
-    int i = 0;
-    char ch;
+#define K 15
+#define nomFile "liste_livre.dat"
+#define nomFile_1 "liste_livre_1.dat"
+#define nomFile_2 "liste_inscription_eleve.dat"
+#define nomFile_3 "liste_d'administration.bin"
+#define nomFile_4 "liste_emprunter.txt"
 
-    while ((ch = getch()) != '\r') {
-        if (ch == '\b') {
-            if (i > 0) {
-                i--;
-                printf("\b \b");
-            }
-        } else if (ch != '\t' && ch != '\n') {
-            if (i < MAX_PASSWORD_LENGTH - 1) {
-                password[i] = ch;
-                i++;
-                printf("*");
-            }
-        }
-    }
 
-    password[i] = '\0';
-    printf("\n");
-}
 FILE* fp = NULL;
 FILE* fp_1 = NULL;
 
 
-char c;
+char c, pass[N], line[L];
 int choix, id, n, m;
-long pos = 0.0;
+long pos = 0.0 ;
 
 
-typedef struct{
-char nom[20];
-char prenom[20];
-char CNE[15];
-char CIN[15];
-char email[40];
-char adresse[30];
-char password[30];
-
+typedef struct user
+{
+    char nom[M], prenom[M], CNE[K], CIN[K], email[N], adresse[N], password[N];
 }user;
 
+user u;
+user *u1 = NULL;
 
 typedef struct info_livre
 {
@@ -70,31 +41,16 @@ typedef struct info_livre
     int ID , ans_publication , qte ;
     char titre[N] , auteur[M] , editeur[N] ;
 }info_livre;
-typedef struct {
-    int id;
-    char titre[50];
-    char acteur[50];
-    char editeur[50];
-    int annee;
-    int quantite;
-    float prix_jour;
-    float prix_fixe;
-}Livre;
 
-void current_datetime(struct tm* local) {
-    time_t now = time(NULL);
-    *local = *localtime(&now);
-}
-
-int isTextPrint(char* str)
-{
-    if(*str == '\0') return 1;
-    else if(!isprint(*str)) return 0;
-    return isTextPrint(str + 1);
-}
 info_livre *tmp = NULL;
 
+typedef struct info_livre_emprunter
+{
+    info_livre *livre;
+    char CNE[K], CIN[K], date_debut[K], date_fin[K] ;
+}info_livre_emprunter;
 
+info_livre_emprunter *temporaire = NULL;
 
 int isTextOnly(char* str)
 {
@@ -103,43 +59,49 @@ int isTextOnly(char* str)
     return isTextOnly(str + 1);
 }
 
-void head_ensah()
+
+int isTextPrint(char* str)
 {
-    setcolor(9); // Set text color to bleau
-    printf("****************************************************************************************************************************************************************************");
-    gotoxy(65, 2);
-    printf("-\tBIENVENUE A LA BIBLIOTHEQUE DE L'ENSAH\t-\n\n");
-    printf("****************************************************************************************************************************************************************************\n");
-    setcolor(7);
-}
-void head()
-{
-
-    setcolor(9); // Set text color to bleau
-    printf("████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████");
-    gotoxy(50, 3);
-    printf("-LA BIBLIOTHEQUE DE L'ECOLE NATIONALE DES SCIENCES APPLIQUEES AL HOCEIMA-\n\n");
-    gotoxy(0,6);
-    printf("████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████\n");
-    setcolor(7);
-} // Reset text color to white
-void setBackgroundColor(int bg) {
-    // Get the current console handle
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    // Get the current attributes (foreground color)
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(hConsole, &csbi);
-
-    // Extract the current foreground color
-    int fg = csbi.wAttributes & 0x0F; // Get the foreground color (lower 4 bits)
-
-    // Combine foreground and new background color
-    int color = (bg << 4) | fg; // Shift background color and combine with foreground
-    SetConsoleTextAttribute(hConsole, color);
+    if(*str == '\0') return 1;
+    else if(!isprint(*str)) return 0;
+    return isTextPrint(str + 1);
 }
 
 
+void convertirEnMajuscules(char *chaine)
+{
+    if(*chaine == '\0') return;
+    *chaine = toupper(*chaine);
+    return convertirEnMajuscules(chaine + 1);
+}
+
+
+void masquer_mot_de_passe(char *password)
+{
+    n = 0;
+    while ((c = getch()) != '\r')
+    {
+        if (c == '\b')
+        {
+            if (n > 0)
+            {
+                n--;
+                printf("\b \b");
+            }
+        }
+        else if (c != '\t' && c != '\n')
+        {
+            if (n < N - 1)
+            {
+                password[n] = c;
+                n++;
+                printf("*");
+            }
+        }
+    }
+    password[n] = '\0';
+    printf("\n");
+}
 void gotoxy(int x, int y) {
     COORD coord;
     coord.X = x;
@@ -152,11 +114,40 @@ void setcolor(int color) {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, color);
 }
+#define RESET   "\033[0m"
+#define BOLD    "\033[1m"
+#define YELLOW  "\033[33m"
+#define GREEN   "\033[32m"
+#define WHITE   "\033[37m"
+#define RED "\033[31m"
+
+// Fonction pour afficher les termes et conditions
+
+void head_ensah()
+{
+    setcolor(9); // Set text color to bleau
+    printf("****************************************************************************************************************************************************************************");
+    gotoxy(65, 2);
+    printf("-\tBIENVENUE A LA BIBLIOTHEQUE DE L'ENSAH\t-\n\n");
+    printf("****************************************************************************************************************************************************************************\n");
+    setcolor(7);
+} // Reset text color to white
+
+
+void head()
+{
+    setcolor(9);
+    printf("████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████");
+    gotoxy(50, 3);
+    printf("-LA BIBLIOTHEQUE DE L'ECOLE NATIONALE DES SCIENCES APPLIQUEES AL HOCEIMA-\n\n");
+    gotoxy(0,6);
+    printf("████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████\n");
+    setcolor(7);
+}
 
 
 void sign_in1()
 {
-    user u;
     fp = fopen(nomFile_2,"at");
     if (fp == NULL)
     {
@@ -199,7 +190,7 @@ erreur_nom:
     printf("Enter votre mot de passe :\n");
     gotoxy(81,13);
     fflush(stdin);
-    scanf("%[^\n]", u.nom);
+    scanf("%[^\n]",u.nom);
     if(!isTextOnly(u.nom))
     {
         gotoxy(60,23);
@@ -244,154 +235,146 @@ erreur_nom:
     gotoxy(84,17);
     fflush(stdin); scanf("%s",u.email);
     gotoxy(81,18);
-    fflush(stdin);     scanf("%[^\n]",u.adresse);//fgets(u.adresse,sizeof(u.adresse),stdin);
+    fflush(stdin); scanf("%[^\n]",u.adresse); //fgets(u.adresse,sizeof(u.adresse),stdin);
     u.adresse[strcspn(u.adresse, "\n")] = '\0'; //A questionner ??
     gotoxy(91,19);
     fflush(stdin); scanf("%s",u.password);
-    fprintf(fp, "%s|%s|%s|%s|%s|%s|%s\n", u.nom, u.prenom, u.CIN, u.CNE, u.email, u.adresse, u.password);
+    fprintf(fp,"%s|%s|%s|%s|%s|%s|%s\n",u.nom,u.prenom,u.CIN,u.CNE, u.email,u.adresse,u.password);
     n = fclose(fp);
     if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_2);
     gotoxy(70,23);
     setcolor(10);
     printf("VOUS ETES INSCRIT AVEC SUCCES!\n");
-        setcolor(9);
-        gotoxy(65,26);
-     printf("Voulez-vous aller à la page de connexion ? (y/n) : ");
-    char choix;
-    scanf(" %c", &choix);
+    setcolor(9);
+    gotoxy(65,26);
+    printf("Voulez-vous aller à la page de connexion ? (O/N) : ");
     setcolor(7);
-    if (choix == 'y' || choix == 'Y') {
+erreur_alpha5:
+    fflush(stdin);
+    scanf(" %c", &c);
+    if(toupper(c) != 'O' && toupper(c) != 'N')
+    {
+        gotoxy(65,27);
+        printf("Voyez saisir une choix correcte (O/N) : ");
+        goto erreur_alpha5;
+    }
+    else if(toupper(c) == 'O')
+    {
         printf("\nRedirection vers la page de connexion...\n");
-        sleep(3);
+        Sleep(3000);
         system("cls");
         LOGIN1();
-
-    } else {
-     erreur_page();
     }
+    else erreur_page();
 }
 
 
-user *u = NULL;
-
-void LOGIN1(){
+void LOGIN1()
+{
+    char email[N];
+    fp = fopen(nomFile_2, "rt");
+    if (fp == NULL)
+    {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile_2);
+        exit(1);
+    }
     head();
- u = (user *)malloc(sizeof(user));
-     int found = 0;
-    fp = fopen(nomFile_2, "r");
-    if (fp == NULL) {
-    printf("Error opening file.\n");
-    exit(1); // Ensure you handle the error appropriately
-}
-    char email[40];
-    char password[30];
-
+    u1 = (user *)malloc(sizeof(user));
     setcolor(9);
-    gotoxy(65, 10);
-    printf("************************************\n");
-
-    gotoxy(65, 11);
-    printf("-      LOGIN TO YOUR ACCOUNT       -\n");
-
-    gotoxy(65, 12);
-    printf("************************************\n");
-    gotoxy(55,11);
-    printf("----------");
-    gotoxy(101,11);
-    printf("----------");
-    gotoxy(65,19);
-    printf("************************************");
-    setcolor(7); // Reset color for text input fields
-    gotoxy(65, 14);
-    printf("Email: ");
-    gotoxy(65, 16);
-    printf("Password: ");
-    gotoxy(65 + strlen("Email: "), 14);
+    gotoxy(50, 12);
+    printf("━━━━━━━━━━━━━━━━━━━━━|LOGIN TO YOUR ACCOUNT|━━━━━━━━━━━━━━━━━━━━━");
+    gotoxy(62,21);
+    printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    gotoxy(65, 15);
+    printf("Email       :");
+    // Password prompt
+    gotoxy(65, 18);
+    printf("Mot de passe: ");
+    gotoxy(65 + strlen("Email       :"), 15);
     scanf("%s", email);
-    gotoxy(65 + strlen("Password: "), 16);
-    masquer_mot_de_passe(password);
-
-while (fscanf(fp, "%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%s\n", u->nom, u->prenom, u->CIN, u->CNE, u->email, u->adresse, u->password) == 7) {
-    if (strcmp(u->email, email) == 0 && strcmp(u->password, password) == 0) {
-        found = 1;
-        break;
+    gotoxy(65 + strlen("Mot de passe: "), 18);
+    masquer_mot_de_passe(pass);
+    m = 0;
+    while (fscanf(fp, "%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%s\n", &(u1->nom), &(u1->prenom), &(u1->CIN), &(u1->CNE), &(u1->email), &(u1->adresse), &(u1->password)) == 7)
+    {
+        if (!strcmp(u1->email, email) && !strcmp(u1->password, pass))
+        {
+            m = 1;
+            break;
+        }
     }
-}
-
-    fclose(fp);
-      if (found == 1) {
-        gotoxy(65, 22);
-        setcolor(10);
-        printf("Connexion reussie ! Bienvenue %s %s.\n", u->nom, u->prenom);
-        setcolor(7);
-
-
-        sleep(2);
-        system("cls");
-        espace_etudiant(u); // Assurez-vous que cette fonction est bien définie et fonctionne
-    } else {
+    n = fclose(fp);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_2);
+    gotoxy(59,23);
+    if(!m)
+    {
         gotoxy(68, 20);
         setcolor(12);
-                    printf("%s %s",u->email,u->password);
-       /* printf("Email ou mot de passe incorrect.\n");*/
-        sleep(2);
+        puts("CIN ou Mot de passe incorrect");
+        gotoxy(65, 22);
+        printf("Appuyez sur une touche pour continuer...");
+        getch();
         system("cls");
         LOGIN1();
     }
-}
-void LOGIN2(){
-     head();
-    fp = fopen("liste d'administration.txt","r");
-    char password[30],pass[20];
-    int found=0;
-
-    setcolor(9); // Set color for the borders
-    gotoxy(65, 10);
-    printf("************************************\n");
-
-    gotoxy(65, 12);
-    printf("-      LOGIN TO YOUR ACCOUNT       -\n");
-
-    gotoxy(65, 14);
-    printf("************************************\n");
-    gotoxy(55,12);
-    printf("----------");
-    gotoxy(101,12);
-    printf("----------");
-    gotoxy(65,20);
-    printf("************************************");
+    setcolor(10);
+    printf("Connexion réussie ! Bienvenue %s %s.\n", u1->nom, u1->prenom);
     setcolor(7);
-    gotoxy(65, 17);
-    printf("Password:");
-    gotoxy(65+strlen("Password: "),17);
-    masquer_mot_de_passe(password);
-    while(fscanf(fp,"%s",pass)==1){
-        if(strcmp(password,pass)==0){
-        found=1;
-        break;
-        }
-    }if (found == 1) {
-        gotoxy(75, 22);
-        setcolor(10);
-        printf("Connexion réussie!\n");
-        sleep(3);  // Pause for a moment
-        system("cls");
-        espace_administration();
-        exit(0);
+    Sleep(2500);
+    system("cls");
+    espace_etudiant();
+}
+
+
+void LOGIN2()
+{
+    char password[N];
+    head();
+    fp = fopen(nomFile_3,"rb");
+    if (fp == NULL)
+    {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile_3);
+        return;
     }
-    else {
+ setcolor(9);
+    gotoxy(50, 12);
+    printf("━━━━━━━━━━━━━━━━━━━━━|LOGIN TO YOUR ACCOUNT|━━━━━━━━━━━━━━━━━━━━━");
+    gotoxy(67,20);
+    printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    gotoxy(65, 16);
+    printf("Password:");
+    gotoxy(65+strlen("Password: "),16);
+    masquer_mot_de_passe(password);
+    m = 0;
+    fflush(stdin);
+    while(fscanf(fp,"%s",pass)==1)
+    {
+        if(!strcmp(password,pass))
+        {
+            m = 1;
+            break;
+        }
+        fflush(stdin);
+    }
+    n = fclose(fp);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_3);
+    gotoxy(72,22);
+    if(!m)
+    {
         setcolor(4);
         gotoxy(73, 24);
-        printf("Mot de passe incorrect\n");
-        sleep(3);
+        puts("CIN ou Mot de passe incorrect\n");
+        Sleep(2500);
         system("cls");
         LOGIN2();
     }
-
-
-
-
-    fclose(fp);}
+    setcolor(10);
+    printf("Connexion réussie!\n");
+    Sleep(2500);
+    system("cls");
+    espace_administration();
+    exit(0);
+}
 
 
 void erreur_page(){
@@ -399,92 +382,52 @@ void erreur_page(){
     system("color F9");
     gotoxy(65, 12);
     printf("********************************************");
-    gotoxy(65, 13);
-    printf("                                            ");
-    gotoxy(62, 14);
-    printf("      consulter cette page ulterieurement !!");
-    gotoxy(65, 15);
-    printf("                                            ");
-    gotoxy(65, 16);
-    printf("                     MERCI...               ");
-    gotoxy(65, 17);
-    printf("                                            ");
+    gotoxy(71, 14);
+    printf("Consulter cette page ulterieurement !!");
+    gotoxy(87, 16);
+    printf("MERCI...");
     gotoxy(65, 18);
     printf("********************************************");
     gotoxy(0,27);
-            setcolor(07);
-            getch();
-                exit(0); // Exit the program
-    return 0;
+    setcolor(07);
+    Sleep(2500);
+    exit(0);
+    system("PAUSE"); // Exit the program
 }
 
 
-void login_sign_in1(){
-system("color 9");
-printf("\n\n\n\n");
-printf("****************************************************************************************************************************************************************************");
-printf("                                                                   -E S P A C E   D' E T U D I A N T -\n");
-printf("****************************************************************************************************************************************************************************\n\n\n\n");
-    int n;
-    while(1){
-    // Set color for the top border
-    setcolor(9); // Blue for the border
-    gotoxy(65, 9);
-    printf("***************************************\n");
-
-    // Set color for the login option
+void login_sign_in1()
+{   system("cls");
+head();
+    printf("\n\n\n\n");
+    system("color 9");
+    gotoxy(26,11);
+    printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|E S P A C E   D' E T U D I A N T|━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    while(1)
+    {
+        n = 0;
     setcolor(9);
-    gotoxy(65, 10);
-    printf("|            ");
-    setcolor(7);
+    gotoxy(59, 14);
     printf("1. se connecter          ");
-    setcolor(9);
-    printf("|\n");
-
-    // Set color for the sign-in option
-    setcolor(9);
-    gotoxy(65, 12);
-    printf("|            ");
-    setcolor(7);
+     gotoxy(90, 14);
     printf("2. s'inscrire            ");
-    setcolor(9);
-    printf("|\n");
-    // Set color for the exit option
-    setcolor(9);
-    gotoxy(65, 14);
-    printf("|            ");
-    setcolor(7);
+     gotoxy(78, 17);
     printf("3. Exit                  ");
-    setcolor(9);
-    printf("|\n");
-    setcolor(9);
-        gotoxy(65, 15);
-        printf("***************************************\n");
-
-        setcolor(07);
-        gotoxy(57, 18);
-        setcolor(9);
-        printf("******************************************************\n");
-        gotoxy(57, 19);
-        printf("|");
-        setcolor(7);
-        gotoxy(65, 19);
+        gotoxy(55, 20);
+        printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        gotoxy(65, 24);
         printf("Please select a valid option (1-3): ");
         setcolor(9);
-        gotoxy(110, 19);
-        printf("|");
-        gotoxy(57, 20);
-        printf("******************************************************\n");
-        gotoxy(101, 19);
-        setcolor(7);
-        scanf("%d", &n);
-        tarik:
-    // Read user input
-    switch (n) {
+        gotoxy(100, 24);
+tarik:
+        fflush(stdin); scanf("%d", &n);
+        // Read user input
+        switch (n)
+        {
             case 1:
-               system("cls"); // Clear the screen
-               LOGIN1(); // Call the login function
-               return; // Exit the function after successful login
+               system("cls");
+               LOGIN1();
+               return;
             case 2:
                 system("cls");
                 sign_in1();
@@ -492,390 +435,251 @@ printf("************************************************************************
             case 3:
                 system("cls");
                 homepage();
-
-                exit(0); // Exit the program
            default:
-                    gotoxy(57, 22);
-                    setcolor(9);
-                    printf("******************************************************\n");
-                    gotoxy(57, 23);
-                    printf("|");
-                    setcolor(7);
-                    gotoxy(60, 23);
-                    printf("Invalid input.Please select a valid option (1-3): ");
-                    setcolor(9);
-                    gotoxy(110, 23);
-                    printf("|\n");
-                    setcolor(9);
-                    gotoxy(57, 24);
-                    printf("******************************************************\n");
-                    gotoxy(109, 23);
-                    setcolor(7);
-                    scanf("%d",&n);
+                    gotoxy(52, 24);
+                    printf("Entree invalide!!! Veuillez selectionner une option valide (1-3): ");
+                    gotoxy(118, 24);
                     goto tarik;
 
-    }
+        }
     }
 }
 
 
-void login_sign_in2(){
-system("color 9");
-printf("\n\n\n\n");
-printf("****************************************************************************************************************************************************************************");
-printf("                                                              -E S P A C E   D' A D M I N I S T R A T I O N-\n");
-printf("****************************************************************************************************************************************************************************\n\n\n\n");
-    int n;
-    while(1){
-    // Set color for the top border
-    setcolor(9); // Blue for Fthe border
-    gotoxy(65, 9);
-    printf("***************************************\n");
-
-    // Set color for the login option
-    setcolor(9);
-    gotoxy(65, 11);
-    printf("|            ");
-    setcolor(7);
-    printf("1. Login                 ");
-    setcolor(9);
-    printf("|\n");
-
-    // Set color for the sign-in option
-    setcolor(9);
-    gotoxy(65, 13);
-    printf("|            ");
-    setcolor(7);
-    printf("2. Exit                  ");
-    setcolor(9);
-    printf("|\n");
-    setcolor(9);
+void login_sign_in2()
+{  head();
+    system("color 9");
+    gotoxy(26,11);
+    printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|E S P A C E   D' A D M I N I S T R A T I O N|━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    while(1)
+    {
+        n = 0;
         gotoxy(65, 15);
-        printf("***************************************\n");
-
-        setcolor(07);
-        gotoxy(57, 18);
+        printf("1. Connexion                   ");
         setcolor(9);
-        printf("******************************************************\n");
-        gotoxy(57, 19);
-        printf("|");
-        setcolor(7);
-        gotoxy(65, 19);
-        printf("Please select a valid option (1-3): ");
+        gotoxy(95, 15);
+        printf("2. Quitter                     ");
         setcolor(9);
-        gotoxy(110, 19);
-        printf("|");
-        gotoxy(57, 20);
-        printf("******************************************************\n");
-
-        gotoxy(101, 19);
-        setcolor(7);
-        scanf("%d", &n);
-        tarik:
-    // Read user input
-    switch (n) {
+        gotoxy(52, 19);
+        printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        gotoxy(59, 23);
+        printf("Veuillez selectionner une option valide (1-3): ");
+        gotoxy(59+strlen("Veuillez selectionner une option valide (1-3): "), 23);
+tarik:
+        fflush(stdin); scanf("%d", &n);
+        switch (n)
+        {
             case 1:
-               system("cls"); // Clear the screen
-               LOGIN2(); // Call the login function
-               return; // Exit the function after successful login
+               system("cls");
+               LOGIN2();
+               return;
             case 2:
                 system("cls");
                 homepage();
-
-                exit(0); // Exit the program
            default:
-                    gotoxy(57, 22);
-                    setcolor(9);
-                    printf("******************************************************\n");
-                    gotoxy(57, 23);
-                    printf("|");
-                    setcolor(7);
-                    gotoxy(60, 23);
-                    printf("Invalid input.Please select a valid option (1-3): ");
-                    setcolor(9);
-                    gotoxy(110, 23);
-                    printf("|\n");
-                    setcolor(9);
-                    gotoxy(57, 24);
-                    printf("******************************************************\n");
-                    gotoxy(109, 23);
-                    setcolor(7);
-                    scanf("%d",&n);
+                    gotoxy(52, 25);
+                    printf("Entree invalide!!! Veuillez selectionner une option valide (1-3): ");
                     goto tarik;
-
-    }
+        }
     }
 }
 
-
 void homepage() {
-           int n;
+    system("cls");
+    setcolor(9);
+    head();
+   //system("color 70");
 
+           int n;
 system("color 9");
-printf("\n\n\n\n");
-printf("***************************************************************************************************************************************************************************");
-printf("                                                                      *M E N U  P R I N C I P A L*\n");
-printf("***************************************************************************************************************************************************************************\n\n\n\n");
-gotoxy(18,10);
+gotoxy(30,9);
+printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|M E N U  P R I N C I P A L|━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+gotoxy(18,13);
 printf("                              veuillez choisir l'espace que vous voulez souhaiter faire des operations :");
 
-gotoxy(50,15);
+gotoxy(50,17);
 printf("1-espace d'etudiants:                          2-espace administration :");
-gotoxy(35,19);
+gotoxy(35,20);
 printf("                                            3-QUITTER : \n\n\n");
-printf("****************************************************************************************************************************************************************************\n");
-gotoxy(130,40);
+gotoxy(45,22);
+printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+gotoxy(130,39);
 printf("2024 ENSAH LIBARY. All rights reserved.");
-gotoxy(68,25);
+gotoxy(73,25);
 printf("Veuillez entrer votre choix : ");
-gotoxy(97,25);
+gotoxy(72+strlen("Veuillez entrer votre choix :"),25);
 
 scanf("%d", &n);
 tarik:
 switch (n) {
             case 1:
-               system("cls"); // Clear the screen
-              login_sign_in1(); // Call the login sign in function
-               return; // Exit the function after successful login
+               system("cls");
+              afficherEtAccepterTermesConditions();
+               return;
             case 2:
-               system("cls"); // Clear the screen
-              login_sign_in2(); // Call the login sign in function
-               return; // Exit the function after successful login
+               system("cls");
+              login_sign_in2();
+               return;
             case 3:
                 erreur_page();
 
-                exit(0); // Exit the program
+                exit(0);
            default:
-                    gotoxy(57, 22);
-                    setcolor(9);
-                    printf("******************************************************\n");
-                    gotoxy(57, 23);
-                    printf("|");
-                    setcolor(7);
-                    gotoxy(60, 23);
+
+                    gotoxy(60, 25);
                     printf("Invalid input.Please select a valid option (1-3): ");
-                    setcolor(9);
-                    gotoxy(110, 23);
-                    printf("|\n");
-                    setcolor(9);
-                    gotoxy(57, 24);
-                    printf("******************************************************\n");
-                    gotoxy(109, 23);
-                    setcolor(7);
+                    gotoxy(109, 25);
                     scanf("%d",&n);
                     goto tarik;
 
     }
 }
-void affiche_livre(const char *fichier_source){
-   Livre l;
-   int i=0;
-fp = fopen(fichier_source, "r");
-if (fp == NULL) {
-    puts("Erreur: Impossible d'ouvrir le fichier ");
-    return;
-} gotoxy(30,34);
-  printf("_____________________________________________________________________________________________________________________________\n");
-  gotoxy(30,35);
-    printf("| ID         | Titre               | Auteur              | Éditeur            | Année   | Quantité | Prix/Jour | Prix Fixe |\n");
-    gotoxy(30,36);
-    printf("____________________________________________________________________________________________________________________________\n");
 
-    // Lecture ligne par ligne
-    while (fscanf(fp, "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n",
-                  &l.id,
-                  l.titre,
-                  l.acteur,
-                  l.editeur,
-                  &l.annee,
-                  &l.quantite,
-                  &l.prix_jour,
-                  &l.prix_fixe) == 8) {
-                          gotoxy(30,37+i);
-        printf("| %-10d | %-19s | %-19s | %-18s | %-7d | %-8d | %-9.2f | %-9.2f |\n",
-               l.id, l.titre, l.acteur, l.editeur,
-               l.annee, l.quantite, l.prix_jour, l.prix_fixe);
-               i++;
-    }
-    gotoxy(30,37+i);
-    printf("____________________________________________________________________________________________________________________________\n");
-   fclose(fp);
-}
-int charger_livre_par_id(Livre *livre, const char *nom_fichier, int id_recherche) {
-    FILE *fp = fopen(nom_fichier, "r");
-    if (fp == NULL) {
-        printf("Erreur : Impossible d'ouvrir le fichier %s.\n", nom_fichier);
-        return 0;
-    }
-
-    char buffer[256]; // Buffer pour lire les lignes
-    while (fgets(buffer, sizeof(buffer), fp)) {
-        // Supprimer le saut de ligne à la fin de la ligne, si présent
-        buffer[strcspn(buffer, "\n")] = '\0';
-
-        // Lire les données de la ligne avec `sscanf`
-        if (sscanf(buffer, "%d %49s %49s %49s %d %d %f %f",
-                   &livre->id, livre->titre, livre->acteur, livre->editeur,
-                   &livre->annee, &livre->quantite, &livre->prix_jour, &livre->prix_fixe) == 8) {
-
-            // Vérifier si l'ID correspond
-            if (livre->id == id_recherche) {
-                fclose(fp);
-                return 1; // Livre trouvé
-            }
-        } else {
-            printf("Erreur de format sur la ligne : %s\n", buffer);
-        }
-    }
-
-    fclose(fp);
-    return 0; // Livre non trouvé
-}
-void afficher_livre(const Livre *livre) {
-    printf("\n=== Détails du Livre ===\n");
-    printf("ID          : %d\n", livre->id);
-    printf("Titre       : %s\n", livre->titre);
-    printf("Acteur      : %s\n", livre->acteur);
-    printf("Editeur     : %s\n", livre->editeur);
-    printf("Année       : %d\n", livre->annee);
-    printf("Quantité    : %d\n", livre->quantite);
-    printf("Prix par jour : %.2f\n", livre->prix_jour);
-    printf("Prix par semaine : %.2f\n", livre->prix_fixe);
-    printf("=========================\n");
-}
-
-
-void emprunter_livre(const char *liste_livre) {
-    struct tm local;
-    Livre livre;
-    char line[100];
-    int id_recherche, jours;
-    FILE *fp;
-
-    // Demander l'ID à l'utilisateur
-    printf("Entrez l'ID du livre : ");
-    scanf("%d", &id_recherche);
-    // Charger le livre correspondant à l'ID
-    if (charger_livre_par_id(&livre, liste_livre, id_recherche)) {
-        if (livre.quantite == 0) {
-            printf("Nous sommes désolés, mais nous n'avons pas ce livre en stock pour le moment\n");
+void afficher_livre(const char *nom)
+{
+    if(pos == 1.0)
+    {
+        fp = fopen(nom , "r+t");
+        if (fp == NULL)
+        {
+            printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nom);
             return;
         }
-        printf("Entrez le nombre de jours d'emprunt : ");
-        scanf("%d", &jours);
-
-        // Calculer le coût
-        float total = (jours <= 6) ? livre.prix_jour * jours : livre.prix_fixe;
-        printf("Le coût total pour %d jours est : %.2f\n", jours, total);
-
-        copier_livres("liste_livre.txt", nomFile_1, id_recherche);
-
-        fp = fopen("liste_emprunter.txt", "a");
-        if (fp == NULL) {
-            printf("Impossible d'ouvrir le fichier liste_emprunter\n");
-            return;
+        tmp = (info_livre*) malloc (sizeof(info_livre));
+        while(!feof(fp))
+        {
+            fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n" , &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
+            if(id == (tmp->ID)) break;
         }
-
-        // Fill the struct tm with current date and time
-        current_datetime(&local);
-
-        // Write the book information and the current date and time
-        fprintf(fp, "%-7d  %-21s  %-20s  %-20s  %-18d  %-28.2f  %-28.2f %02d-%02d-%d %02d:%02d:%02d\n",
-                livre.id, livre.acteur, livre.titre, livre.editeur, livre.annee,
-                livre.prix_jour, livre.prix_fixe,
-                local.tm_mday, local.tm_mon + 1, local.tm_year + 1900,
-                local.tm_hour, local.tm_min, local.tm_sec);
-
-        fclose(fp);
-        printf("Votre emprunt a été effectué sans erreur.\n");
-
-    } else {
-        printf("Aucun livre trouvé avec l'ID %d.\n", id_recherche);
+        n = fclose(fp);
+        if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nom);
+        afficher_informations1(*tmp);
     }
-
+    else if(pos == -1.0) puts("Aucun livre correspond avec vos informations !!");
+    else puts("\nDésole!!! Actuellement, Il n'y a pas de livre en stock!!!\n\tVoyez revenir ulterierement\n\tMERCI POUR VOTRE COMPREHENSION.");
 }
 
 
+void afficher_informations1(info_livre tmp)
+{
+    printf("\n============== Details du Livre ==============\n");
+    printf("ID               : %d\n", tmp.ID);
+    printf("Titre            : %s\n", tmp.titre);
+    printf("Acteur           : %s\n", tmp.auteur);
+    printf("Editeur          : %s\n", tmp.editeur);
+    printf("Année            : %d\n", tmp.ans_publication);
+    printf("Prix par jour    : %.2f\n", tmp.prix_jour);
+    printf("Prix par semaine : %.2f\n", tmp.prix_semaine);
+    printf("================================================\n");
+}
 
 
-    void copier_livres(const char *fichier_source, const char *fichier_destination,int id_livre_emprunter) {
-    FILE *source = fopen(fichier_source, "r");
-    FILE *destination = fopen(fichier_destination, "w");
-
-    // Vérification de l'ouverture des fichiers
-    if (source == NULL) {
-        printf("Erreur : Impossible d'ouvrir le fichier source %s.\n", fichier_source);
-        return;
+void affiche_livre(const char *fichier_source)
+{   setcolor(9);
+    recherche_livre();
+    if(pos == -2.0) puts("Désole!!! Actuellement, Il n'y a pas de livre dans la bibliothéque !!!\n\tMerci de revenir ulterierement.");
+    else
+    {
+        n = 0;
+        tmp = (info_livre*) malloc (sizeof(info_livre));
+        system("cls");
+        gotoxy(25,12);
+        printf("__________________________________________________________________________________________________________________________________");
+        gotoxy(25,13);
+        printf("| ID         |    Titre               |    Auteur            | Éditeur            |  Année  | Prix/Jour | Prix Aprés une Semaine |");
+        gotoxy(25,14);
+        printf("__________________________________________________________________________________________________________________________________");
+        fp = fopen(fichier_source, "r+t");
+        if (fp == NULL)
+        {
+            printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", fichier_source);
+            return;
+        }
+        while (fscanf(fp, "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n" , &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine)) == 8)
+        {
+            gotoxy(25, 15 + n);
+            printf("| %-10d | %-22s | %-20s | %-18s | %-7d | %-9.2f | %-22.2f |\n", (tmp->ID), (tmp->titre), (tmp->auteur), (tmp->editeur), (tmp->ans_publication), (tmp->prix_jour), (tmp->prix_semaine));
+            n++;
+        }
+        gotoxy(25, 15 + n);
+        printf("__________________________________________________________________________________________________________________________________\n");
+        n = fclose(fp);
+        if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", fichier_source);
     }
-    if (destination == NULL) {
-        printf("Erreur : Impossible d'ouvrir le fichier destination %s.\n", fichier_destination);
-        fclose(source); // Fermer le fichier source avant de quitter
-        return;
+}
+
+
+void retourner_livre()
+{
+    m = 0; // Flag pour indiquer si le livre est trouvé
+    char nom[100]; // Titre du livre à retourner
+    // Ouverture des fichiers
+    fp = fopen(nomFile, "r+t");
+    fp_1 = fopen(nomFile_1, "w+t");
+    if(fp == NULL)
+    {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile);
+        exit(1);
     }
-
-    Livre livre;
-    while (fscanf(source, "%d %s %s %s %d %d %f %f",
-                  &livre.id,
-                  livre.titre,
-                  livre.acteur,
-                  livre.editeur,
-                  &livre.annee,
-                  &livre.quantite,
-                  &livre.prix_jour,
-                  &livre.prix_fixe) == 8)
-                  if(livre.id != id_livre_emprunter ){
-        fprintf(destination, "%d %s %s %s %d %d %.2f %.2f\n",
-                livre.id,
-                livre.titre,
-                livre.acteur,
-                livre.editeur,
-                livre.annee,
-                livre.quantite,
-                livre.prix_jour,
-                livre.prix_fixe);
-    }else{
-    fprintf(destination, "%d %s %s %s %d %d %.2f %.2f\n",
-                livre.id,
-                livre.titre,
-                livre.acteur,
-                livre.editeur,
-                livre.annee,
-                (livre.quantite) - 1,
-                livre.prix_jour,
-                livre.prix_fixe);
-
-
-
-
-
+    if(fp_1 == NULL)
+    {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile_1);
+        n = fclose(fp);
+        if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
+        exit(1);
     }
+    printf("Entrez le titre du livre : ");
+    fflush(stdin);
+    fgets(nom, sizeof(nom), stdin); // Lire la ligne entière avec les espaces
+    nom[strcspn(nom, "\n")] = '\0'; // Retirer le saut de ligne si présent
+    info_livre *livre = (info_livre*) malloc (sizeof(info_livre));
+    // Lecture ligne par ligne du fichier source
+    while (fscanf(fp, "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n", &(livre->ID), &(livre->titre), &(livre->auteur), &(livre->editeur), &(livre->ans_publication), &(livre->qte), &(livre->prix_jour), &(livre->prix_semaine)) == 8)
+    {
 
-    fclose(source);
-    fclose(destination);
-    rename("liste_livre.txt","liste_livre_2.txt");
-    rename("liste_livre_1.txt","liste_livre.txt");
-
-    remove("liste_livre_2.txt");
+        if (strcmp(livre->titre, nom) == 0)
+        {                                    // Si le livre est trouvé
+            livre->qte += 1;             // Incrémenter la quantité
+            m = 1;                       // Marquer comme trouvé
+        }
+        // Écrire le livre (modifié ou non) dans le fichier temporaire
+        fprintf(fp_1, "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n", (livre->ID), (livre->titre), (livre->auteur), (livre->editeur), (livre->ans_publication), (livre->qte), (livre->prix_jour), (livre->prix_semaine));
     }
+    // Fermeture des fichiers
+    n = fclose(fp);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
+    n = fclose(fp_1);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_1);
+    // Vérification si le livre a été trouvé
+    if (m)
+    {
+        remove(nomFile);            // Supprime le fichier source
+        rename(nomFile_1, nomFile); // Renomme le fichier temporaire
+        printf("Le livre a été retourné avec succès.\n");
+    }
+    else
+    {
+        remove(nomFile_1);          // Supprime le fichier temporaire
+        printf("Erreur : Le livre n'existe pas.\n");
+    }
+}
 
-//Mes traveaux situent ci-dessous (Ilyas)
 
 void afficher_menu_etu()
 {
-
     setcolor(9);
-    gotoxy(60,12);
-    puts("━━━━━━━━━━━━━━━━━━ESPACE ETUDIANT━━━━━━━━━━━━━━━━━━");
+        gotoxy(60,12);
+    puts("━━━━━━━━━━━━━━━━━━ESPACE ETUDIANTS━━━━━━━━━━━━━━━━━");
     gotoxy(60, 14);
     printf("*\t1           Emprunter un livre               *");
     gotoxy(60, 16);
     printf("---------------------------------------------------");
     gotoxy(60, 18);
-    printf("*\t2           Rechercher un livre             *");
+    printf("*\t2           Rechercher un livre              *");
     gotoxy(60, 20);
     printf("---------------------------------------------------");
     gotoxy(60, 22);
-    printf("*\t3       Lister les livres disponibles       *");
+    printf("*\t3       Lister les livres disponibles        *");
     gotoxy(60, 24);
     printf("---------------------------------------------------");
     gotoxy(60, 26);
@@ -890,64 +694,69 @@ void afficher_menu_etu()
 }
 
 
-
-void espace_etudiant(){
+void espace_etudiant()
+{
     head();
-    convertirEnMajuscules(u->nom);
-    convertirEnMajuscules(u->prenom);
-        gotoxy(73,9);
-    printf("BIENVENUE %s %s ", u->nom, u->prenom);
-    Is_Fichier_Livre();
+    convertirEnMajuscules(u1->nom);
+    convertirEnMajuscules(u1->prenom);
+    gotoxy(73,9);
+    printf("BIENVENUE %s %s ", u1->nom, u1->prenom);
+    Is_Fichier_Livre(nomFile);
+    Is_Fichier_Livre(nomFile_2);
+    Is_Fichier_Livre(nomFile_4);
     afficher_menu_etu();
     do
     {
     switch(choix)
     {
         case 0 :
-            erreur_page();
+            system("cls");
+            homepage();
             break;
-        case 1 : emprunter_livre("liste_livre.txt");
-        break ;
+        case 1 :
+            emprunter_livre();
+            break;
         case 2 :
             recherche_livre();
-            if(pos == -2.0) puts("\nDesole!!! Actuellement, Il n'y a pas de livre !!!\n\tVoyez revenir ulterierement\n\tMERCI POUR VOTRE COMPREHENSION.");
+            if(pos == -2.0) puts("\nDésole!!! Actuellement, Il n'y a pas de livre !!!\n\tVoyez revenir ulterierement\n\tMERCI POUR VOTRE COMPREHENSION.");
             else
             {
                 espace_recherche_livre();
-                afficher_fpos();
-                getch();
+                afficher_livre(nomFile);
             }
             break;
-        case 3 : affiche_livre("liste_livre.txt");
-        break;
+        case 3 :
+            affiche_livre(nomFile);
+            break;
         default :
             setcolor(4);
             gotoxy(62,32);
             puts("Erreur!!! entrer un nombre valide entre (0-3):");
-            sleep(2);
+            Sleep(2000);
             gotoxy(65,33);
             puts("Appuyez sur une touche pour continuer...");
             break;
     }
-    printf("Appuyez sur une touche pour continuer");
+    printf("Appuyez sur une touche pour continuer...");
     getch();
     system("cls");
 
     if(choix) espace_etudiant();
     }while(choix != 0);
 
+    getch();
 }
 
 
 void afficher_menu_admini()
 {
     setcolor(9);
-    gotoxy(35,11);
+        gotoxy(35,11);
     puts("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━│ESPACE ADMINISTRATION│━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     gotoxy(50,15);
     printf("1-Ajouter un livre");
     gotoxy(107,15);
-    printf("2-Supprimer un livre                      ");
+    printf("2-Supprimer un livre                        ");
     gotoxy(50,19);
     printf("3-Modifier les informations d\'un livre    ");
     gotoxy(107,19);
@@ -959,36 +768,29 @@ void afficher_menu_admini()
     gotoxy(50,27);
     printf("7-Lister les livres empruntes");
     gotoxy(107,27);
-    printf("8-Exit");
+    printf("0-Exit");
     gotoxy(35,30);
     puts("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     gotoxy(70,33);
     printf("Veuillez entrer une meilleur choix (0-7): ");
     scanf("%d", &choix);
 }
-void affiche_livre_emprunter(){
-    setcolor(9);
-char line[100];
- fp=fopen("liste_emprunter.txt","r");
- if(fp==NULL){
-    printf("impossible d;ouvrir le fichier liste_emprunter");
-    exit(1);}
-while (fgets(line, sizeof(line), fp) != NULL) {
-        printf("%s", line);
-    }
 
-    fclose(fp);
-}
+
 void espace_administration()
-{    head();
-    Is_Fichier_Livre();
+{
+    head();
+    Is_Fichier_Livre(nomFile);
+    Is_Fichier_Livre(nomFile_2);
+    Is_Fichier_Livre(nomFile_4);
     afficher_menu_admini();
     do
     {
     switch(choix)
     {
         case 0 :
-            erreur_page();
+            system("cls");
+            homepage();
             break;
         case 1 :
             ajouter_livre();
@@ -999,27 +801,26 @@ void espace_administration()
             break;
         case 3 :
             modifier_livre();
-            puts("Merci Pour Votre Visite !!!");
             break;
-        case 4 : retourner_livre();
+        case 4 :
+            retourner_livre();
             break;
         case 5 : break;
         case 6 :
-                recherche_livre();
+            recherche_livre();
             if(pos == -2.0) puts("\nLa liste est vide !!!");
             else
             {
                 espace_recherche_livre();
                 afficher_fpos();
-                getch();
             }
             break;
-        case 7 :affiche_livre_emprunter();
-        break;
-        case 8: erreur_page();
+        case 7 :
+            liste_livre_emprunter();
+            break;
         default :
-           setcolor(4);
-    gotoxy(62,34);
+            setcolor(4);
+            gotoxy(62,34);
             puts("Erreur!!! entrer un nombre valide entre (0-3):");
             sleep(2);
             gotoxy(65,35);
@@ -1035,62 +836,294 @@ void espace_administration()
     getch();
 }
 
-void liste_livre_emprunter(){
-    Livre livre;
-fp=fopen("liste_emprunter.txt","r");
-if(fp==NULL){
-    printf("impossible d'ouvrir fichier liste_emprunter");
-    return ;
-}
-    while (fscanf(fp, "%d %49s %49s %49s %d %d %f %f",
-                  &livre.id,
-                  livre.titre,
-                  livre.acteur,
-                  livre.editeur,
-                  &livre.annee,
-                  &livre.quantite,
-                  &livre.prix_jour,
-                  &livre.prix_fixe) == 8){
 
-                  fprintf(fp, "%d %49s %49s %49s %d %d %f %f",
-                  &livre.id,
-                  livre.titre,
-                  livre.acteur,
-                  livre.editeur,
-                  &livre.annee,
-                  &livre.quantite,
-                  &livre.prix_jour,
-                  &livre.prix_fixe);
-
-                  }
-
-                  fclose(fp);
-
-
-
-
-
-}
-
-void Is_Fichier_Livre()
+void saiser_informations_etudiant(info_livre_emprunter **tmp)
 {
-    fp = fopen(nomFile , "r+t");
+    printf("Enter la CIN    : ");
+erreur_print1:
+    fflush(stdin);
+    scanf("%s",&((*tmp)->CIN));
+    if(!isTextPrint((*tmp)->CIN))
+    {
+        printf("\n\t!!! N.B : Seul de CARACTERE, ESPACE et CHIFFRE\nVoyez saisir une CIN valide");
+        goto erreur_print1;
+    }
+    printf("Enter la CNE    : ");
+erreur_print2:
+    fflush(stdin);
+    scanf("%s",&((*tmp)->CNE));
+    if(!isTextPrint((*tmp)->CNE))
+    {
+        printf("\n\t!!! N.B : Seul de CARACTERE, ESPACE et CHIFFRE\nVoyez saisir une CNE valide");
+        goto erreur_print2;
+    }
+}
+
+
+int recherche_etudiant_user(info_livre_emprunter *tmp)
+{
+    fp = fopen(nomFile_2 , "r+t");
     if(fp == NULL)
     {
-        fp = fopen(nomFile , "w+t");
-        if(fp == NULL)
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\n", nomFile_2);
+        exit(1);
+    }
+    m = 0;
+    while (fgets(line, sizeof(line), fp))
+    {
+        if(strstr(line , (tmp->CIN)) && strstr(line , (tmp->CNE)))
         {
-            printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile);
-            exit(1);
+            m = 1;
+            break;
         }
     }
     n = fclose(fp);
-    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\. ", nomFile_2);
+    return m;
 }
 
 
+void emprunter_livre()
+{
+    recherche_livre();
+    if(pos != -2.0)
+    {
+        // Demander l'ID a l'utilisateur
+        printf("Entrez l'ID du livre : ");
+erreur_num:
+        fflush(stdin);
+        n = scanf("%d", &id);
+        if((n != 1) || (id <= 0))
+        {
+            printf("Voyez saisir une valeur correcte (>0) : ");
+            goto erreur_num;
+        }
+        temporaire = (info_livre_emprunter*) malloc (sizeof(info_livre_emprunter));
+        // Charger le livre correspondant a l'ID
+        recherche_livre();
+        if (pos == 1.0)
+        {
+            if(!(tmp->qte))
+            {
+                puts("Nous sommes désolés, mais nous n'avons pas ce livre en stock pour le moment\n");
+                return;
+            }
+            saiser_informations_etudiant(&temporaire);
+            m = recherche_etudiant_user(temporaire);
+            if(m)
+            {
+                temporaire->livre = tmp ;
+                puts("Combien de jours voulez-vous d'emprunt ? (N.B : Ne dépasse pas 2 mois)");
+erreur_num1:
+                fflush(stdin);
+                m = scanf("%d", &n);
+                if((m != 1) || (n <= 0) || (n > 60) )
+                {
+                    printf("Voyez saisir une valeur correcte (0<Jours<60) : ");
+                    goto erreur_num1;
+                }
+                // Calculer le cout
+                float total = (n < 7) ? tmp->prix_jour * n : tmp->prix_semaine;
+                if(n == 1) printf("Le coût total d'un seul jour est : %.2fDH\n", total);
+                else printf("Le coût total des %d jours est : %.2fDH\n", n, total);
+                printf("Voulez-vous suiver cette processus : ");
+erreur_alpha4:
+                fflush(stdin);
+                scanf(" %c", &c);
+                if(toupper(c) != 'O' && toupper(c) != 'N')
+                {
+                    printf("Voyez saisir une choix correcte (O/N) : ");
+                    goto erreur_alpha4;
+                }
+                else if(toupper(c) == 'O')
+                {
+                    int jour = 0, mois = 0, annee = 0;
+                    while(((jour > 31) || (jour < 1)) || ((mois > 12) || (mois < 1)) || (annee < 1900))
+                    {
+                        printf("Donnez la date de livraison du livre (jj / mm / aaaa) (N.B : la date doit également >= 2jours) : ");
+erreur_date:
+                        scanf("%d\t %d\t %d", &jour, &mois, &annee);
+                    }
+                    time_t now = time(NULL);
+                    struct tm *cur_time = localtime(&now);
+                    if((((cur_time->tm_mday) - jour < -1) && !((cur_time->tm_mon) - mois + 1) && !((cur_time->tm_year) - annee + 1900)) || ((cur_time->tm_year) - annee + 1900 < 0) || (((cur_time->tm_mon) - mois + 1 > 0) && ((cur_time->tm_year) - annee + 1900 < 0)))
+                    {
+                        cur_time->tm_year = annee - 1900;
+                        cur_time->tm_mon = mois - 1;
+                        cur_time->tm_mday = jour;
+                    }
+                    else
+                    {
+                        printf("Voyey entrer une date convenable (Date >= 2jours) : ");
+                        goto erreur_date;
+                    }
+                    char *s1 = (char*) malloc (K * sizeof(char));
+                    strftime(s1 , K , "%H:%M" , cur_time);
+                    char *s2 = (char*) malloc (M * sizeof(char));
+                    strftime(s2 , M , "%Z" , cur_time);
+                    strftime((temporaire->date_debut) , K , "%d %m %Y" , cur_time);
+                    struct tm *cur_time1 = localtime(&now);
+                    cur_time1->tm_year = annee - 1900;
+                    cur_time1->tm_mon = mois - 1;
+                    cur_time1->tm_mday = jour + n;
+                    while(1)
+                    {
+                        if((!(cur_time1->tm_mon) || (cur_time1->tm_mon == 2) || (cur_time1->tm_mon == 4) || (cur_time1->tm_mon == 6) || (cur_time1->tm_mon == 7) || (cur_time1->tm_mon == 9) || (cur_time1->tm_mon == 11)) && (cur_time1->tm_mday > 31))
+                        {
+                            cur_time1->tm_mday -= 31;
+                            cur_time1->tm_mon += 1;
+                        }
+                        else if(((cur_time1->tm_mon == 3) || (cur_time1->tm_mon == 5) || (cur_time1->tm_mon == 8) || (cur_time1->tm_mon == 10)) && (cur_time1->tm_mday > 30))
+                        {
+                            cur_time1->tm_mday -= 30;
+                            cur_time1->tm_mon += 1;
+                        }
+                        else
+                        {
+                            if((cur_time1->tm_mday > 29) && !((cur_time1->tm_year + 1900) % 4) && ((cur_time1->tm_mon) == 1)) cur_time1->tm_mday -= 29;
+                            else if((cur_time1->tm_mday > 28) && ((cur_time1->tm_year + 1900) % 4) && ((cur_time1->tm_mon) == 1)) cur_time1->tm_mday -= 28;
+                            else break;
+                            cur_time1->tm_mon += 1;
+                        }
+                        if(cur_time1->tm_mon > 11)
+                        {
+                            cur_time1->tm_mon -= 12;
+                            cur_time1->tm_year += 1;
+                        }
+                    }
+                    strftime((temporaire->date_fin) , K , "%d %m %Y" , cur_time1);
+                    n = 0;
+                    copier_livres(nomFile , nomFile_1);
+                    fp = fopen(nomFile_4,"a+t");
+                    if(fp==NULL)
+                    {
+                        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile_4);
+                        return;
+                    }
+                    fprintf(fp , "%-7d %-28s %-20s %-28s %-7d %-12s %-12s %-12s %-12s\n" , (temporaire->livre->ID) , (temporaire->livre->titre) , (temporaire->livre->auteur) , (temporaire->livre->editeur) , (temporaire->livre->ans_publication) , (temporaire->CIN), (temporaire->CNE), (temporaire->date_debut), (temporaire->date_fin));
+                    n = fclose(fp);
+                    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_4);
+                    puts("Votre emprunte a été effectué sans erreur!!");
+                    Sleep(2000);
+                    printf("Vous recevez la livraison le jour : %s a %s (%s) , Jusqu'au : %s à %s (%s) .\n", temporaire->date_debut, s1, s2, temporaire->date_fin, s1, s2);
+                }
+            }
+            else puts("\nL'étudiant(e) n'inscrit pas a la bibliotheque .");
+        }
+        else printf("Aucun livre trouvé avec l'ID %d.\n", id);
+    }
+    else puts("\nDésole!!! Actuellement, Il n'y a pas de livre pour emprunter !!!\n\tVoyez revenir ulterierement\n\tMERCI POUR VOTRE COMPREHENSION.");
+}
+void liste_livre_emprunter()
+{   int i=0;
+    system("cls");
+    fp = fopen(nomFile_4,"r+t");
+    if(fp == NULL)
+    {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile_4);
+        return ;
+    }gotoxy(10,12);
+    printf("--------------------------------------------------------------------------------------------------------------------------------------------------");
+    gotoxy(10,13);
+    printf("|  ID  |            Titre           |        Acteur      |           Editeur          | Année |     CIN    |     CNE    |  DateDébut |  DateFin  |");
+    gotoxy(10,14);
+    printf("--------------------------------------------------------------------------------------------------------------------------------------------------");
+    while (!feof(fp))
+    {
+        fgets(line, sizeof(line), fp);
+        gotoxy(10,15+i);
+        printf("%s\n", line);
+        i++;
+    }
+     gotoxy(10,14+i);
+         printf("--------------------------------------------------------------------------------------------------------------------------------------------------");
 
 
+    n = fclose(fp);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_4);
+}
+
+
+void copier_livres(const char *fichier_source, const char *fichier_destination)
+{
+    fp = fopen(fichier_source, "r+t");
+    fp_1 = fopen(fichier_destination, "w+t");
+    // Verification de l'ouverture des fichiers
+    if (fp == NULL) {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", fichier_source);
+        return;
+    }
+    if (fp_1 == NULL) {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", fichier_destination);
+        n = fclose(fp);
+        if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", fichier_source); // Fermer le fichier source avant de quitter
+        return;
+    }
+    tmp = (info_livre*) malloc (sizeof(info_livre));
+    while (fscanf(fp, "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n", &(tmp->ID), (tmp->titre), (tmp->auteur), (tmp->editeur), &(tmp->ans_publication), &(tmp->qte), &(tmp->prix_jour), &(tmp->prix_semaine)) == 8)
+    {
+        if((tmp->ID) != id) fprintf(fp_1, "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n", (tmp->ID), (tmp->titre), (tmp->auteur), (tmp->editeur), (tmp->ans_publication), (tmp->qte), (tmp->prix_jour), (tmp->prix_semaine));
+        else if(!n) fprintf(fp_1, "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n", (tmp->ID), (tmp->titre), (tmp->auteur), (tmp->editeur), (tmp->ans_publication), ((tmp->qte) - 1), (tmp->prix_jour), (tmp->prix_semaine));
+        else fprintf(fp_1, "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n", (tmp->ID), (tmp->titre), (tmp->auteur), (tmp->editeur), (tmp->ans_publication), ((tmp->qte) + 1), (tmp->prix_jour), (tmp->prix_semaine));
+    }
+    n = fclose(fp);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", fichier_source);
+    n = fclose(fp_1);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", fichier_destination);
+    remove(fichier_source);
+    rename(fichier_destination , fichier_source);
+}
+
+/*
+void statistique()
+{
+    int maxi = 0, mini = 0;
+    float maxi1 = 0.0, mini1 = 0.0;
+    int *tab_id_qte, *tab_id_ans, *tab_id_prix;
+    tab_id_qte = (int*) malloc (L * sizeof(int));
+    tab_id_ans = (int*) malloc (L * sizeof(int));
+    tab_id_prix = (int*) malloc (L * sizeof(int));
+    tmp = (info_livre*) malloc (sizeof(info_livre));
+    fp = fopen(nomFile, "r+t");
+    fp_1 = fopen(nomFile_4, "r+t");
+    if (fp == NULL) {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile);
+        return;
+    }
+    if (fp_1 == NULL) {
+        printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile);
+        n = fclose(fp);
+        if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_4); // Fermer le fichier source avant de quitter
+        return;
+    }
+    printf("ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ Statistique ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»\n");
+    printf("º   Les livre(s) (a/ont) plus grand quantité (sont/est):           º\n");
+    while(!feof(fp))
+    {
+        fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n" , &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
+        if(maxi <= (tmp->qte))
+        {
+            maxi = (tmp->qte);
+        }
+        if(mini >= (tmp->qte)) mini = (tmp->qte);
+
+        if(maxi <= (tmp->ans_publication)) maxi = (tmp->ans_publication);
+
+        if(mini >= (tmp->ans_publication)) mini = (tmp->ans_publication);
+
+        if(maxi1 <= (tmp->prix_semaine)) maxi1 = (tmp->prix_semaine);
+
+        if(mini1 >= (tmp->prix_semaine)) mini1 = (tmp->prix_semaine);
+
+    }
+    n = fclose(fp);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
+    n = fclose(fp_1);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_4);
+
+
+}
+*/
 
 
 void espace_recherche_livre()
@@ -1105,21 +1138,37 @@ erreur_num2:
         goto erreur_num2;
     }
     recherche_livre();
-    if((pos != -1.0) && (pos != -2.0)) puts("Les informations du livre sont comme suit : ");
+    if(pos == 1.0) puts("Les informations du livre sont comme suit : ");
 }
 
 
-
-void afficher_informations(info_livre *b)
+void Is_Fichier_Livre(const char *nom)
 {
-    printf("ID du livre : %d \n",b->ID);
-    printf("Le titre du livre : %s \n",b->titre) ;
-    printf("Nom d'acteur du livre : %s \n",b->auteur) ;
-    printf("L'ans du publication du livre : %d \n",b->ans_publication) ;
-    printf("L'editeur du livre : %s \n",b->editeur) ;
-    printf("La quantite du livres en stock : %d \n",b->qte) ;
-    printf("Le prix de livre pour emprunter par jour (en MAD) : %.2f \n",b->prix_jour) ;
-    printf("Le prix de livre pour emprunter de plus une semaine (en MAD) : %.2f \n",b->prix_semaine) ;
+    fp = fopen(nom , "r+t");
+    if(fp == NULL)
+    {
+        fp = fopen(nom , "w+t");
+        if(fp == NULL)
+        {
+            printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nom);
+            exit(1);
+        }
+    }
+    n = fclose(fp);
+    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nom);
+}
+
+
+void afficher_informations(info_livre b)
+{
+    printf("ID du livre\t\t\t\t\t\t\t: %d \n",b.ID);
+    printf("Le titre du livre\t\t\t\t\t\t: %s \n",b.titre) ;
+    printf("Nom d'acteur du livre\t\t\t\t\t        : %s \n",b.auteur) ;
+    printf("L'ans du publication du livre\t\t\t\t        : %d \n",b.ans_publication) ;
+    printf("L'editeur du livre \t\t\t\t\t\t: %s \n",b.editeur) ;
+    printf("La quantite du livres en stock     \t\t\t\t: %d \n",b.qte) ;
+    printf("Le prix de livre pour emprunter par jour (en MAD)  \t\t: %.2f \n",b.prix_jour) ;
+    printf("Le prix de livre pour emprunter de plus une semaine (en MAD)    : %.2f \n",b.prix_semaine) ;
 }
 
 
@@ -1128,59 +1177,59 @@ void saiser_informations(info_livre **b)
     if(!id)
     {
         printf("Entrer id du livre : ") ;
-erreur_num1:
+erreur_num3:
         fflush(stdin);
         n = scanf("%d",&((*b)->ID));
-        if((n != 1) || (((*b)->ID) < 0))
+        if((n != 1) || (((*b)->ID) <= 0))
         {
             printf("Voyez saisir une valeur correcte (>0) : ");
-            goto erreur_num1;
+            goto erreur_num3;
         }
     }
     printf("Entrer le titre du livre : ") ;
-erreur_print1:
+erreur_print3:
     fflush(stdin);
-scanf(" %[^\n]", (*b)->titre);
+    scanf("%[^\n]",&((*b)->titre)) ;
     if(!isTextPrint((*b)->titre))
     {
         printf("\n\t!!! N.B : Seul de CARACTERE, ESPACE et CHIFFRE\nVoyez saisir un titre valide : ");
-        goto erreur_print1;
+        goto erreur_print3;
     }
     printf("Entrer nom d'acteur du livre : ") ;
-erreur_nom1:
+erreur_nom3:
     fflush(stdin);
-scanf(" %[^\n]", (*b)->auteur);
+    scanf("%[^\n]",&((*b)->auteur)) ;
     if(!isTextOnly((*b)->auteur))
     {
         printf("\n\t!!! N.B : Seul de CARACTERE et ESPACE\nVoyez saisir un nom valide : ");
-        goto erreur_nom1;
+        goto erreur_nom3;
     }
     printf("Entrer l'ans du publication du livre : ") ;
-erreur_num2:
+erreur_num4:
     fflush(stdin);
     n = scanf("%d",&((*b)->ans_publication)) ;
-    if((n != 1) || (((*b)->ans_publication) < 0))
+    if((n != 1) || (((*b)->ans_publication) <= 0))
     {
         printf("Voyez saisir une annee correcte (>0) : ");
-        goto erreur_num2;
+        goto erreur_num4;
     }
     printf("Entrer l'editeur du livre : ") ;
-erreur_print2:
+erreur_print4:
     fflush(stdin);
-scanf(" %[^\n]", (*b)->editeur);
+    scanf("%[^\n]",&((*b)->editeur)) ;
     if(!isTextPrint((*b)->editeur))
     {
         printf("\n\t!!! N.B : Seul de CARACTERE, ESPACE et CHIFFRE\nVoyez saisir un editeur valide : ");
-        goto erreur_print2;
+        goto erreur_print4;
     }
     printf("Entrer la quantite du livres en stock : ") ;
-erreur_num3:
+erreur_num5:
     fflush(stdin);
     n = scanf("%d",&((*b)->qte)) ;
-    if((n != 1) || (((*b)->qte) < 0))
+    if((n != 1) || (((*b)->qte) <= 0))
     {
         printf("Voyez saisir une valeur correcte (>0) : ");
-        goto erreur_num3;
+        goto erreur_num5;
     }
     printf("Entrer le prix de livre pour emprunter par jour (en MAD) : ") ;
 erreur_flo:
@@ -1191,7 +1240,7 @@ erreur_flo:
         printf("Voyez saisir un prix correct (>0) : ");
         goto erreur_flo;
     }
-    printf("Entrer le prix de livre pour emprunter de plus une semaine (en MAD): ") ;
+    printf("Entrer le prix de livre pour emprunter de plus une semaine (en MAD)  : ") ;
 erreur_flo1:
     fflush(stdin);
     n = scanf("%f",&((*b)->prix_semaine)) ;
@@ -1201,6 +1250,7 @@ erreur_flo1:
         goto erreur_flo1;
     }
 }
+
 
 void ajouter_livre()
 {
@@ -1217,14 +1267,14 @@ erreur_num6:
         }
 
         recherche_livre();
-        if((pos != -1.0) && (pos != -2.0)) printf("\nERREUR!!! VOYEZ ENTRER UN AUTRE ID!!! Cette ID est deja remplie.\n");
+        if(pos == 1.0) printf("\nERREUR!!! VOYEZ ENTRER UN AUTRE ID!!! Cette ID est deja remplie.\n");
         else
         {
             info_livre *debut = (info_livre*)malloc(sizeof(info_livre));
             debut->ID = id;
             saiser_informations(&debut);
             info_livre_equ(debut);
-            if((pos != -1.0) && (pos != -2.0))
+            if(pos == 1.0)
             {
                 puts("\n\nS'il vous plait !!!\nVeuillez entrer un autre livre cette livre deja existe\nSes informations sont representent comme suit :\n");
                 afficher_fpos();
@@ -1237,7 +1287,7 @@ erreur_num6:
                     printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile);
                     exit(1);
                 }
-                fprintf(fp , "%d|%s|%s|%s|%d|%d|%f|%f\n", (debut->ID) , (debut->titre) , (debut->auteur) , (debut->editeur) , (debut->ans_publication) , (debut->qte) , (debut->prix_jour) , (debut->prix_semaine));
+                fprintf(fp , "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n" , (debut->ID) , (debut->titre) , (debut->auteur) , (debut->editeur) , (debut->ans_publication) , (debut->qte) , (debut->prix_jour) , (debut->prix_semaine));
                 puts("\nL'enregesretement des informations s'effectue avec succee") ;
 
                 n = fclose(fp);
@@ -1259,9 +1309,9 @@ erreur_alpha:
 
 
 void afficher_fpos()
-{    setcolor(7);
-    tmp = (info_livre*)malloc(sizeof(info_livre));
-    if((pos != -1.0) && (pos != -2.0))
+{
+    setcolor(7);
+    if(pos == 1.0)
     {
         fp = fopen(nomFile , "r+t");
         if(fp == NULL)
@@ -1269,10 +1319,13 @@ void afficher_fpos()
             printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile);
             exit(1);
         }
-        fseek(fp , pos , SEEK_SET);
-        fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n", &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
-        afficher_informations(tmp);
-
+        tmp = (info_livre*)malloc(sizeof(info_livre));
+        while(!feof(fp))
+        {
+            fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n", &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
+            if(id == tmp->ID) break;
+        }
+        afficher_informations(*tmp);
         n = fclose(fp);
         if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
     }
@@ -1280,6 +1333,7 @@ void afficher_fpos()
     else printf("\nLa liste est vide !!!\n");
 
 }
+
 
 void info_livre_equ(info_livre *debut)
 {
@@ -1297,10 +1351,7 @@ void info_livre_equ(info_livre *debut)
         if(!stricmp(debut->titre , tmp->titre) && !stricmp(debut->auteur , tmp->auteur) && !stricmp(debut->editeur , tmp->editeur) && (debut->ans_publication == tmp->ans_publication)) break;
     }
     if(!stricmp(debut->titre , tmp->titre) && !stricmp(debut->auteur , tmp->auteur) && !stricmp(debut->editeur , tmp->editeur) && (debut->ans_publication == tmp->ans_publication))
-    {
-        pos = ftell(fp);
-        pos -= pos / n ;
-    }
+        pos = 1.0;
     else if((m == -1) && (n == 1)) pos = -2.0;
     else pos = -1.0;
 
@@ -1311,7 +1362,7 @@ void info_livre_equ(info_livre *debut)
 
 
 void recherche_livre()
-{    setcolor(9);
+{
     tmp = (info_livre*)malloc(sizeof(info_livre));
     fp = fopen(nomFile , "r+t");
     if(fp == NULL) {
@@ -1325,11 +1376,7 @@ void recherche_livre()
         m = fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n", &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
         if(id == tmp->ID) break;
     }
-    if(id == tmp->ID)
-    {
-        pos = ftell(fp);
-        pos -= pos / n ;
-    }
+    if(id == tmp->ID) pos = 1.0;
     else if((m == -1) && (n == 1)) pos = -2.0;
     else pos = -1.0;
 
@@ -1339,8 +1386,6 @@ void recherche_livre()
 }
 
 
-
-
 void supprimer_livre()
 {
     recherche_livre();
@@ -1348,21 +1393,21 @@ void supprimer_livre()
     else
     {
         printf("Donner ID de livre que vous souhaitez supprimer : ");
-erreur_num5:
+erreur_num7:
         fflush(stdin);
         n = scanf("%d", &id);
-        if((n != 1) || (id < 0))
+        if((n != 1) || (id <= 0))
         {
             printf("Voyez saisir une valeur correcte (>0) : ");
-            goto erreur_num5;
+            goto erreur_num7;
         }
         recherche_livre();
         if (pos == -1.0) printf("Ce livre n'existe pas !!! \n");
         else
         {
-            n = 1 ;
             puts("Les informations du livre que vous voulez supprimer sont comme suit :\n");
             afficher_fpos();
+            n = 1 ;
             printf("Voulez-vous suiver cette operation (O/N) : ");
 erreur_alpha1:
             fflush(stdin);
@@ -1384,28 +1429,27 @@ erreur_alpha1:
                 if(fp_1 == NULL)
                 {
                     printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile_1);
+                    n = fclose(fp);
+                    if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
                     exit(1);
                 }
-
                 tmp = (info_livre*)malloc(sizeof(info_livre));
                 while(!feof(fp))
                 {
-                    fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n", &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
-                    if(id != tmp->ID) fprintf(fp_1 , "%d|%s|%s|%s|%d|%d|%f|%f\n" , (tmp->ID) , (tmp->titre) , (tmp->auteur) , (tmp->editeur) , (tmp->ans_publication) ,  (tmp->qte) , (tmp->prix_jour) , (tmp->prix_semaine));
+                    fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n" , &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
+                    if(id != tmp->ID) fprintf(fp_1 , "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n" , (tmp->ID) , (tmp->titre) , (tmp->auteur) , (tmp->editeur) , (tmp->ans_publication) ,  (tmp->qte) , (tmp->prix_jour) , (tmp->prix_semaine));
                 }
-
                 n = fclose(fp);
                 if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
-
                 n = fclose(fp_1);
                 if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile_1);
-
                 remove(nomFile);
                 n = rename(nomFile_1 , nomFile);
             }
             if(!n) printf("\nLa suppression des informations de livre de ID = %d s'effectue avec succee \n", id) ;
             else printf("\nLa suppression des informations de livre de ID = %d s'effectue avec echoue \n", id) ;
         }
+    }
         printf("\nVoulez-vous supprimer une autre livre (O/N) ? ");
 erreur_alpha2:
         fflush(stdin);
@@ -1416,146 +1460,148 @@ erreur_alpha2:
             goto erreur_alpha2;
         }
         else if(toupper(c) == 'O') supprimer_livre();
-    }
 }
-void retourner_livre() {
-    int found = 0;              // Flag pour indiquer si le livre est trouvé
-    char nom[100];              // Titre du livre à retourner
-    FILE *fp, *fp_1;            // Fichiers source et temporaire
+int choose_item(char **items, char *title)
+{
+    int selected_option = 0;
+    int key;
 
-    // Ouverture des fichiers
-    fp = fopen(nomFile, "r");
-    fp_1 = fopen(nomFile_1, "w");
-
-    if (fp == NULL) {
-        printf("Erreur : Impossible d'ouvrir le fichier source %s.\n", nomFile);
-        return;
-    }
-    if (fp_1 == NULL) {
-        printf("Erreur : Impossible d'ouvrir le fichier destination %s.\n", nomFile_1);
-        fclose(fp);
-        return;
+    // Compter le nombre d'options
+    int item_count = 0;
+    while (items[item_count] != NULL)
+    {
+        item_count++;
     }
 
-    // Lecture du titre du livre
-    printf("Entrez le titre du livre : ");
-    fflush(stdin);
-    scanf("%[^\n]",nom);
+    while (1)
+    {
+        // Effacer l'écran (spécifique à Windows)
+        system("cls");
 
-    Livre livre;
+        // Afficher le titre
+        printf(BOLD YELLOW "%s:\n" RESET, title);
 
-    // Lecture ligne par ligne du fichier source
-    while (fscanf(fp, "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n",
-                  &livre.id,
-                  livre.titre,
-                  livre.acteur,
-                  livre.editeur,
-                  &livre.annee,
-                  &livre.quantite,
-                  &livre.prix_jour,
-                  &livre.prix_fixe) == 8) {
-
-        // Affiche le livre lu pour vérifier
-        printf("Vérification du livre : %s\n", livre.titre);
-
-        // Comparer le titre
-        if (strcmp(livre.titre, nom) == 0) {  // Si le livre est trouvé
-            livre.quantite += 1;             // Incrémenter la quantité
-            found = 1;                       // Marquer comme trouvé
+        // Afficher les options avec surlignage
+        for (int i = 0; i < item_count; i++)
+        {
+            if (i == selected_option)
+            {
+                // Si l'option sélectionnée est "Refuser", on l'affiche en rouge
+                if (i == 1) {
+                    printf(RED "> %s\n" RESET, items[i]); // Afficher en rouge
+                } else {
+                    printf(GREEN "> %s\n" RESET, items[i]); // Afficher en vert
+                }
+            }
+            else
+            {
+                printf(WHITE "  %s\n" RESET, items[i]);
+            }
         }
 
-        // Écrire le livre (modifié ou non) dans le fichier temporaire
-        fprintf(fp_1, "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n",
-                livre.id,
-                livre.titre,
-                livre.acteur,
-                livre.editeur,
-                livre.annee,
-                livre.quantite,
-                livre.prix_jour,
-                livre.prix_fixe);
-    }
-
-    // Fermeture des fichiers
-    fclose(fp);
-    fclose(fp_1);
-
-    // Vérification si le livre a été trouvé
-    if (found) {
-        remove(nomFile);            // Supprime le fichier source
-        rename(nomFile_1, nomFile); // Renomme le fichier temporaire
-        printf("Le livre a été retourné avec succès.\n");
-    } else {
-        remove(nomFile_1);          // Supprime le fichier temporaire
-        printf("Erreur : Le livre n'existe pas.\n");
+        // Récupérer la saisie de l'utilisateur
+        key = _getch();
+        if (key == 224) // Préfixe des touches fléchées
+        {
+            key = _getch();
+            if (key == 72 && selected_option > 0) // Flèche du haut
+            {
+                selected_option--;
+            }
+            else if (key == 80 && selected_option < item_count - 1) // Flèche du bas
+            {
+                selected_option++;
+            }
+        }
+        else if (key == 13) // Touche Enter
+        {
+            return selected_option;
+        }
     }
 }
 
 
-/*void retourner_livre(){
-   int  found=0;
-   int nom ;
- fp = fopen(nomFile, "r");
- fp_1 = fopen(nomFile_1, "w");
+void afficherEtAccepterTermesConditions() {
+    setcolor(9);
+    char *options[] = {"Accepter", "Refuser"};
+    int selected_option = 0; // 0 pour "Accepter", 1 pour "Refuser"
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    WORD originalAttrs;
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
 
-    if (fp == NULL) {
-        printf("Erreur : Impossible d'ouvrir le fichier source %s.\n", nomFile);
-        return;
-    }
-    if (fp_1 == NULL) {
-        printf("Erreur : Impossible d'ouvrir le fichier destination %s.\n", nomFile_1);
-        return;
-    }
-   fflush(stdin);
-    printf("enter le titre de le livre:");
-    fgets(nom, sizeof(nom), stdin);
-    nom[strcspn(nom, "\n")] = '\0';
-    Livre livre;
-    while (fscanf(fp, "%d|%[^|]%[^|]%[^|]%d|%d|%f|%f\n",
-                  &livre.id,
-                  livre.titre,
-                  livre.acteur,
-                  livre.editeur,
-                  &livre.annee,
-                  &livre.quantite,
-                  &livre.prix_jour,
-                  &livre.prix_fixe) == 8) {
-    if((livre.id,nom)!=0){
-    fprintf(fp_1, "%d %s %s %s %d %d %.2f %.2f\n",
-                livre.id,
-                livre.titre,
-                livre.acteur,
-                livre.editeur,
-                livre.annee,
-                (livre.quantite),
-                livre.prix_jour,
-                livre.prix_fixe);
-    }else{
-        fprintf(fp_1, "%d %s %s %s %d %d %.2f %.2f\n",
-                livre.id,
-                livre.titre,
-                livre.acteur,
-                livre.editeur,
-                livre.annee,
-                (livre.quantite) + 1,
-                livre.prix_jour,
-                livre.prix_fixe);
-                    found=1;}
-    }
-    if (found != 1) {
-        printf("Erreur : Le livre n'existe pas.\n");
-        fclose(fp);
-        fclose(fp_1);
-    }else
-    printf("succee");
-        fclose(fp);
-        fclose(fp_1);
-    rename(nomFile,"xi7aja.txt");
-    rename(nomFile_1,nomFile);
-    remove("xi7aja.txt");
+    GetConsoleScreenBufferInfo(hConsole, &csbi);
+    originalAttrs = csbi.wAttributes;
 
-}*/
+    while (1) {
+        system("cls");
+        gotoxy(50, 10);
+        printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|Termes et Conditions|━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ \n");
+        gotoxy(55, 13);
+        printf("1. Chaque étudiant peut emprunter jusqu'à 3 livres à la fois.\n");
+        gotoxy(55, 14);
+        printf("2. La durée maximale d'emprunt est de 30 jours.\n");
+        gotoxy(55, 15);
+        printf("3. Un retard dans la restitution entraînera une pénalité.\n");
+        gotoxy(55, 16);
+        printf("4. Les livres doivent être rendus en bon état.\n");
+        gotoxy(55, 17);
+        printf("5. En cas de perte ou de dégradation, le livre doit être remboursé.\n");
+        gotoxy(55, 18);
+        printf("6. Le non-respect des règles peut entraîner une suspension de prêt.\n");
+        gotoxy(50, 23);
+        printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
+        // Centrer les options "Accepter" et "Refuser
+        for (int i = 0; i < 2; i++) {
+            if (i == selected_option) {
+                if (i == 0) {
+                    // "Accepter" à gauche
+                    gotoxy(65, 21); // Position à gauche
+                    SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN);
+                } else {
+                    // "Refuser" à droite
+                    gotoxy(105, 21); // Position à droite
+                    SetConsoleTextAttribute(hConsole, FOREGROUND_RED);
+                }
+            } else {
+                // Default color
+                if (i == 0) {
+                    gotoxy(65, 21); // Position à gauche
+                } else {
+                    gotoxy(105, 21); // Position à droite
+                }
+                SetConsoleTextAttribute(hConsole, originalAttrs);
+            }
+            printf("%s\n", options[i]);
+        }
+
+        // Gestion des touches pressées
+        int ch = _getch();
+        if (ch == 224) { // Touche spéciale (flèches)
+            ch = _getch();
+            switch (ch) {
+                case 75: // Flèche gauche
+                    selected_option = 0; // Aller à "Accepter"
+                    break;
+                case 77: // Flèche droite
+                    selected_option = 1; // Aller à "Refuser"
+                    break;
+            }
+        } else if (ch == 13) { // Touche Entrée
+            break;
+        }
+
+        SetConsoleTextAttribute(hConsole, originalAttrs);
+    }
+
+    system("cls");
+
+    if (selected_option == 0) {
+        login_sign_in1();
+    } else {
+        homepage();
+    }
+}
 
 void modifier_livre()
 {
@@ -1564,16 +1610,16 @@ void modifier_livre()
     else
     {
         printf("Donner ID de livre que vous souhaitez modifier ses informations : ");
-erreur_num6:
+erreur_num8:
         fflush(stdin);
         n = scanf("%d", &id);
-        if((n != 1) || (id < 0))
+        if((n != 1) || (id <= 0))
         {
             printf("Voyez saisir une valeur correcte (>0) : ");
-            goto erreur_num6;
+            goto erreur_num8;
         }
         recherche_livre();
-        if(pos != -1.0)
+        if(pos == 1.0)
         {
             n = 1 ;
             fp = fopen(nomFile , "r+t");
@@ -1586,23 +1632,26 @@ erreur_num6:
             if(fp_1 == NULL)
             {
                 printf("\.\.\.\.\.\.\.\.\.\.Impossible d\'ouvrir le fichier %s\.\.\.\.\.\.\.\.\.\.\. \n", nomFile_1);
+                n = fclose(fp);
+                if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
                 exit(1);
             }
 
             tmp = (info_livre*)malloc(sizeof(info_livre));
             while(!feof(fp))
             {
-                fscanf(fp, "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n", &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
-                if(id != tmp->ID) fprintf(fp_1 , "%d|%s|%s|%s|%d|%d|%0.2f|%.2f\n" , (tmp->ID) , (tmp->titre) , (tmp->auteur) , (tmp->editeur) , (tmp->ans_publication) , (tmp->qte) , (tmp->prix_jour) , (tmp->prix_semaine));
+                fscanf(fp , "%d|%[^|]|%[^|]|%[^|]|%d|%d|%f|%f\n" , &(tmp->ID) , &(tmp->titre) , &(tmp->auteur) , &(tmp->editeur) , &(tmp->ans_publication) , &(tmp->qte) , &(tmp->prix_jour) , &(tmp->prix_semaine));
+                if(id != tmp->ID) fprintf(fp_1 , "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n" , (tmp->ID) , (tmp->titre) , (tmp->auteur) , (tmp->editeur) , (tmp->ans_publication) , (tmp->qte) , (tmp->prix_jour) , (tmp->prix_semaine));
                 else
                 {
                     puts("Les anciennes informations de ce livre sont comme suit : \n");
-                    afficher_informations(tmp);
+                    afficher_informations(*tmp);
                 }
             }
             puts("Donner les nouveaux informations de ce livre : \n");
+            tmp->ID = id;
             saiser_informations(&tmp);
-            fprintf(fp_1 , " %d|%s|%s|%s|%d|%d|%0.2f|%.2f\n" , (tmp->ID) , (tmp->titre) , (tmp->auteur) , (tmp->editeur) , (tmp->ans_publication) , (tmp->qte) , (tmp->prix_jour) , (tmp->prix_semaine));
+            fprintf(fp_1 , "%d|%s|%s|%s|%d|%d|%.2f|%.2f\n" , (tmp->ID) , (tmp->titre) , (tmp->auteur) , (tmp->editeur) , (tmp->ans_publication) , (tmp->qte) , (tmp->prix_jour) , (tmp->prix_semaine));
 
             n = fclose(fp);
             if(n) printf("\n\n\.\.\.\.\.\.\.\.\.\.Erreur de fermer le fichier %s\.\.\.\.\.\.\.\.\.\.\. ", nomFile);
@@ -1629,4 +1678,6 @@ erreur_alpha3:
     }
 }
 
+
 #endif // FUNCTION_H_INCLUDED
+
